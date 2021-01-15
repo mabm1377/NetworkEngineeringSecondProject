@@ -48,7 +48,7 @@ class FarsNewsCrawler(NewsAgencyBaseCrawler):
                                         if content3.attrs.get("name") == 'thumbnail':
                                             new_news.update({"img": content3.attrs.get("content")})
                 new_news.update({"link": str(self.url + link)})
-                new_news.update({"id": str(hash(json.dumps(new_news)))})
+                new_news.update({"id": str(hash(new_news['link']))})
                 self.current_pages.append(new_news)
             except Exception as e:
                 print(str(e))
@@ -60,8 +60,6 @@ class FarsNewsCrawler(NewsAgencyBaseCrawler):
             self.fetch_pages()
             for news in self.current_pages:
                 save_news(news)
-
-            # TODO calculate tf/if
 
 
 if __name__ == "__main__":
