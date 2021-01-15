@@ -80,7 +80,7 @@ def search(query: str):
         if news is not None:
             ranked_news.append({"news_id": news_id, "tf_idf": tf_idf, "news": news})
     ranked_news.sort(key=lambda x: x.get("tf_idf"), reverse=True)
-    return ranked_news[0:10]
+    return [news["news"] for news in ranked_news[0:10]]
 
 
 def insert_news(news):
@@ -109,35 +109,19 @@ def check_exist_news(news_id):
     return cur.fetchone()['news_existed']
 
 
-def calculate_tf_idf(news: str, news_id):
-    terms = news.split(" ")
-    terms_dict = dict()
-    global_terms_number = 0
-    tf_idf_results = dict()
-    for term in terms:
-        if len(term) < 3:
-            continue
-        if term not in terms_dict:
-            terms_dict[term] = 0
-        terms_dict[term] += 1
-        global_terms_number += 1
-    for key, value in terms_dict.items():
-        tf_idf_results[key] = value / global_terms_number
-
-
 def read_news(_from: int, _limit: int):
     cur: cursor = create_postgres_connection().cursor(cursor_factory=DictCursor)
-    cur.execute(f"select * from news ORDER BY updated_at LIMIT {_limit} OFFSET {_from} ")
+    cur.execute(f"select * from news ORDER BY DESC updated_at LIMIT {_limit} OFFSET {_from} ")
     all_news = []
     for news in cur.fetchall():
         all_news.append({key: value for key, value in news.items()})
     return all_news
 
 
-def read_news_of_on_news_agency(news_agency_name, _from: int, _limit: int):
+def read_news_of_one_news_agency(news_agency_name, _from: int, _limit: int):
     cur: cursor = create_postgres_connection().cursor(cursor_factory=DictCursor)
     cur.execute(
-        f"select * from news where news_agency = '{news_agency_name}' ORDER BY updated_at LIMIT {_limit} OFFSET {_from} ")
+        f"select * from news where news_agency = '{news_agency_name}' ORDER BY updated_at DESC LIMIT {_limit} OFFSET {_from} ")
     all_news = []
     for news in cur.fetchall():
         all_news.append({key: value for key, value in news.items()})
@@ -151,5 +135,12 @@ def visit_news(news_id):
     cur.execute(f"update news set visit=visit+1 where id = '{news_id}' RETURNING visit")
     return jsonify({"visit": cur.fetchone()["visit"]}), 200
 
-# if __name__ == "__main__":
-#     print(visit_news("71952248825273618625976079404344221381471001777672550813923485717447029901517"))
+
+def get_most_visited_news():
+    cur: cursor = create_postgres_connection().cursor(cursor_factory=DictCursor)
+    cur.execute(f"select * from news where updated_at > now() -interval '1 day' "
+                f"order by visit DESC")
+    all_news = []
+    for news in cur.fetchall():
+        all_news.append({key: value for key, value in news.items()})
+    return all_news

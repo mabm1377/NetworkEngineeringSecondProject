@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from utils import read_news, read_news_of_on_news_agency, search, visit_news
+from utils import read_news, read_news_of_one_news_agency, search, visit_news, get_most_visited_news
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -17,10 +17,10 @@ def get_news():
 def get_news_of_certain_news_agency(news_agency_name):
     _from = request.args.get('from') or 0
     _limit = request.args.get('limit') or 10
-    return jsonify(read_news_of_on_news_agency(news_agency_name, _from, _limit))
+    return jsonify(read_news_of_one_news_agency(news_agency_name, _from, _limit))
 
 
-@app.route("/search")
+@app.route("/search/")
 def search_in_news():
     query = request.args.get("query")
     return jsonify(search(query))
@@ -33,6 +33,10 @@ def visit():
         return jsonify({"error": "news id is None"}), 400
     return visit_news(news_id)
 
+
+@app.route("/most_visited/")
+def most_visited_list():
+    return jsonify(get_most_visited_news())
 
 
 if __name__ == "__main__":
