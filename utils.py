@@ -75,5 +75,15 @@ def read_news(_from: int, _limit: int):
     return all_news
 
 
+def read_news_of_on_news_agency(news_agency_name, _from: int, _limit: int):
+    cur: cursor = create_postgres_connection().cursor(cursor_factory=DictCursor)
+    cur.execute(
+        f"select * from news where news_agency = '{news_agency_name}' ORDER BY updated_at LIMIT {_limit} OFFSET {_from} ")
+    all_news = []
+    for news in cur.fetchall():
+        all_news.append({key: value for key, value in news.items()})
+    return all_news
+
+
 if __name__ == '__main__':
     pprint(read_news(0, 10))

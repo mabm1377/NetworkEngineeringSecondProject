@@ -70,8 +70,8 @@ if __name__ == "__main__":
     crawler.fetch_pages()
     for page in crawler.current_pages:
         save_news(page)
-        time.sleep(1)
-        calculate_tf_idf(news_id=page['id'], news=page['body'])
+    # for
+    # calculate_tf_idf(news_id=page['id'], news=page['body'])
 
     # for link in links:
     #     print(link)
