@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from multiprocessing import Process
 import hazm
+from utils import save_news, invert_index
+import time
 
 
 class NewsAgencyBaseCrawler(ABC, Process):
@@ -18,3 +20,16 @@ class NewsAgencyBaseCrawler(ABC, Process):
     @abstractmethod
     def fetch_pages(self):
         pass
+
+    def run(self):
+        while True:
+            self.fetch_urls()
+            self.fetch_pages()
+            for news in self.current_pages:
+                try:
+                    save_news(news)
+                    invert_index(news)
+                except Exception as e:
+                    print(e)
+            time.sleep(3600)
+

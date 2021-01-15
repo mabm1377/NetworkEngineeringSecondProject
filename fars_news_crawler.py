@@ -6,7 +6,7 @@ from news_agency_base_crawler import NewsAgencyBaseCrawler
 from bs4 import BeautifulSoup
 from urllib import request
 from bs4.element import Tag
-from utils import save_news, calculate_tf_idf
+import hashlib
 
 
 class FarsNewsCrawler(NewsAgencyBaseCrawler):
@@ -32,7 +32,7 @@ class FarsNewsCrawler(NewsAgencyBaseCrawler):
                 soup = BeautifulSoup(page)
                 body = max(self.normalizer.normalize(soup.findAll("main")[0].text).split("\n\n"), key=len)
                 head = self.normalizer.normalize(soup.findAll("head")[0].text)
-                new_news = {"body": body, "title": head, "news_agency": "fars_news"}
+                new_news = {"body": body, "title": head, "news_agency": "خبرگزاری فارس"}
                 for content in soup.contents:
                     if isinstance(content, Tag):
                         for content2 in content.contents:
@@ -48,26 +48,20 @@ class FarsNewsCrawler(NewsAgencyBaseCrawler):
                                         if content3.attrs.get("name") == 'thumbnail':
                                             new_news.update({"img": content3.attrs.get("content")})
                 new_news.update({"link": str(self.url + link)})
-                new_news.update({"id": str(hash(new_news['link']))})
+                m = hashlib.sha256()
+                m.update(new_news["link"].encode())
+                a = m.hexdigest()
+                hs_int = int(a, 16)
+                new_news.update({"id": str(hs_int)})
                 self.current_pages.append(new_news)
             except Exception as e:
                 print(str(e))
         self.current_links = []
 
-    def run(self):
-        while True:
-            self.fetch_urls()
-            self.fetch_pages()
-            for news in self.current_pages:
-                save_news(news)
-
 
 if __name__ == "__main__":
     crawler = FarsNewsCrawler()
-    crawler.fetch_urls()
-    crawler.fetch_pages()
-    for page in crawler.current_pages:
-        save_news(page)
+    crawler.run()
     # for
     # calculate_tf_idf(news_id=page['id'], news=page['body'])
 
