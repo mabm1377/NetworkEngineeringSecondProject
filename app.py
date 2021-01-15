@@ -1,7 +1,8 @@
 from flask import Flask, request, jsonify
 from utils import read_news, read_news_of_on_news_agency
-
+from flask_cors import CORS
 app = Flask(__name__)
+cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
 
 @app.route('/get_news/')

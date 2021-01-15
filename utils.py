@@ -16,6 +16,20 @@ def create_postgres_connection():
 text = "سلام من دارم میام خونه تو هم بیا خونه من"
 
 
+def invert_index(news):
+    id = news['id']
+    if not check_exist_news(id):
+        return
+    body = str(news['body'])
+    words = body.split(" ")
+    cur: cursor = create_postgres_connection().cursor(cursor_factory=DictCursor)
+
+
+#     for word in words:
+#         try:
+#             cur.execute("insert into inverted_index(news_id)")
+#         except psycopg2
+# /
 def insert_news(news):
     cur: cursor = create_postgres_connection().cursor(cursor_factory=DictCursor)
     news["time"] = datetime.datetime.fromtimestamp(news["time"])
@@ -29,10 +43,6 @@ def insert_news(news):
         print(str(e))
 
 
-def update_news(news):
-    pass
-
-
 def save_news(news):
     return insert_news(news)
 
@@ -41,12 +51,6 @@ def check_exist_news(news_id):
     cur: cursor = create_postgres_connection().cursor(cursor_factory=DictCursor)
     cur.execute(f"select exists(select 1 from news where id='{news_id}') as news_existed")
     return cur.fetchone()['news_existed']
-
-
-def save_tf_idf_of_news(tf_idf_dict, news_id):
-    cur: cursor = create_postgres_connection().cursor(cursor_factory=DictCursor)
-    for key, value in tf_idf_dict.items():
-        cur.execute(f"insert into docs_tf_idf(word, tf_idf, doc_id) values ('{str(key)}',{value},'{news_id}' )")
 
 
 def calculate_tf_idf(news: str, news_id):
@@ -63,7 +67,6 @@ def calculate_tf_idf(news: str, news_id):
         global_terms_number += 1
     for key, value in terms_dict.items():
         tf_idf_results[key] = value / global_terms_number
-    save_tf_idf_of_news(tf_idf_results, news_id)
 
 
 def read_news(_from: int, _limit: int):
