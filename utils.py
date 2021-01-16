@@ -111,7 +111,7 @@ def check_exist_news(news_id):
 
 def read_news(_from: int, _limit: int):
     cur: cursor = create_postgres_connection().cursor(cursor_factory=DictCursor)
-    cur.execute(f"select * from news ORDER BY DESC updated_at LIMIT {_limit} OFFSET {_from} ")
+    cur.execute(f"select * from news ORDER BY updated_at DESC LIMIT {_limit} OFFSET {_from} ")
     all_news = []
     for news in cur.fetchall():
         all_news.append({key: value for key, value in news.items()})
