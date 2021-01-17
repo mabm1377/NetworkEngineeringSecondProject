@@ -1,43 +1,56 @@
-from flask import Flask, request, jsonify
-from utils import read_news, read_news_of_one_news_agency, search, visit_news, get_most_visited_news
-from flask_cors import CORS
+import uvicorn
 
-app = Flask(__name__)
-cors = CORS(app, resources={r"/*": {"origins": "*"}})
+from starlette.middleware.cors import CORSMiddleware
+from postgers_repositoy import PostgresRepository
+from search_engine import SearchEngine
+from rss_crawler import RSSCrawler
+from fastapi import FastAPI, Query
+from typing import List, Optional
 
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_methods=['*'],
+    allow_headers=['*']
+)
 
-@app.route('/get_news/')
-def get_news():
-    _from = request.args.get('from') or 0
-    _limit = request.args.get('limit') or 10
-    return jsonify(read_news(_from, _limit))
-
-
-@app.route('/get_news_of_news_agency/<news_agency_name>')
-def get_news_of_certain_news_agency(news_agency_name):
-    _from = request.args.get('from') or 0
-    _limit = request.args.get('limit') or 10
-    return jsonify(read_news_of_one_news_agency(news_agency_name, _from, _limit))
+postgres_repository = PostgresRepository()
 
 
-@app.route("/search/")
-def search_in_news():
-    query = request.args.get("query")
-    return jsonify(search(query))
+@app.get("/set_urls")
+def set_urls_for_fetch_pages(urls: Optional[List[str]] = Query(None)):
+    if len(urls) > 0:
+        postgres_repository.set_current_urls_for_fetch_news(urls)
+    return {"msg": "آدرس ها با موفقیت ثبت شدند."}
 
 
-@app.route("/visit/")
-def visit():
-    news_id = request.args.get("news_id")
-    if news_id is None:
-        return jsonify({"error": "news id is None"}), 400
-    return visit_news(news_id)
+@app.get("/get_news")
+def get_indexed_news(_from: Optional[int] = Query(None, alias="from"),
+                     _limit: Optional[str] = Query(None, alias="limit")):
+    return postgres_repository.get_indexed_news(_from or 0, _limit or 10)
 
 
-@app.route("/most_visited/")
+@app.get("/search")
+def search(query: str):
+    return SearchEngine.search(query)
+
+
+@app.get("/visit")
+def visit(news_id: str):
+    return postgres_repository.visit_news(news_id)
+
+
+@app.get("/most_visited")
 def most_visited_list():
-    return jsonify(get_most_visited_news())
+    return postgres_repository.get_most_visited_news()
 
 
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+if __name__ == '__main__':
+    search_engine = SearchEngine()
+    rss_crawler = RSSCrawler()
+    search_engine.start()
+    rss_crawler.start()
+    uvicorn.run(app, host='0.0.0.0', port=5000)
+    search_engine.join()
+    rss_crawler.join()
