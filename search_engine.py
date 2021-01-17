@@ -10,6 +10,8 @@ class SearchEngine(Process):
     @classmethod
     def calculate_tf_idf(cls, query_terms, news_id):
         news = cls.postgres_repository.get_news(news_id, True)
+        if news is None:
+            return 0, None
         title_terms = str(news["title"]).split(" ")
         tf = 0
         for i, body_term in enumerate(title_terms):
